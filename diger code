@@ -1,0 +1,182 @@
+const int frontEchoPin = A0;
+const int frontTriggerPin = A1;
+const int leftEchoPin = A2;
+const int leftTriggerPin = A3;
+const int rightEchoPin = A4;
+const int rightTriggerPin = A5;
+const int motorL1 = 2;
+const int motorL2 = 3;
+const int motorR1 = 4;
+const int motorR2 = 5;
+const int motorER = 10;
+const int motorEL = 11;
+
+volatile float maxFrontDistance20 = 20.00;
+volatile float frontDuration, frontDistanceCm, leftDuration, leftDistanceCm, rightDuration, rightDistanceCm;
+volatile float maxLeftDistance20, maxRightDistance20 = 20.00;
+
+void setup() {
+  // serial
+  Serial.begin(9600);
+
+  // ultrasonic
+  pinMode(frontTriggerPin, OUTPUT);
+  pinMode(frontEchoPin, INPUT);
+  pinMode(leftTriggerPin, OUTPUT);
+  pinMode(leftEchoPin, INPUT);
+  pinMode(rightTriggerPin, OUTPUT);
+  pinMode(rightEchoPin, INPUT);
+
+  // motors
+  pinMode(motorL1, OUTPUT);
+  pinMode(motorL2, OUTPUT);
+  pinMode(motorR1, OUTPUT);
+  pinMode(motorR2, OUTPUT);
+  pinMode(motorER, OUTPUT);
+  pinMode(motorEL, OUTPUT);
+  delay(2000);
+  
+}
+
+void loop() {
+
+                                                   // front distance check
+  checkFrontDistance();
+  if (frontDistanceCm < maxFrontDistance20) {
+    Serial.println("Too close");
+    checkLeftDistance();
+    delay(20);
+    checkRightDistance();
+    delay(20);
+    if (leftDistanceCm < rightDistanceCm)
+      moveRight();
+    else if (leftDistanceCm > rightDistanceCm) {
+      moveLeft();
+    }
+    else if (rightDistanceCm > maxRightDistance20 && leftDistanceCm > maxLeftDistance20) {
+	  moveRight();
+	}
+  }
+  else {
+    Serial.println("OK");
+    moveForward();
+  }
+
+                                                   // left distance check
+  checkLeftDistance();
+  if (leftDistanceCm < maxLeftDistance20) {
+    Serial.println("Left too close");
+    delay(20);
+    checkLeftDistance();
+    delay(20);
+    checkRightDistance();
+    delay(20);
+    if (leftDistanceCm > rightDistanceCm)
+      moveForward();
+    else if (leftDistanceCm < rightDistanceCm) {
+      moveRight();
+    }
+  }
+
+                                                    // right distance check
+  checkRightDistance();
+  if (rightDistanceCm < maxRightDistance20) {
+    Serial.println("Right too close");
+    delay(20);
+    checkRightDistance();
+    delay(20);
+    checkLeftDistance();
+    delay(20);
+    if (rightDistanceCm > leftDistanceCm)
+      moveForward();
+    else if (rightDistanceCm < leftDistanceCm) {
+      moveLeft();
+    }
+  }
+}
+
+void checkFrontDistance() {
+  digitalWrite(frontTriggerPin, LOW);  //para generar un pulso limpio ponemos a LOW 4us
+  delayMicroseconds(4);
+  digitalWrite(frontTriggerPin, HIGH);  //generamos Trigger (disparo) de 10us
+  delayMicroseconds(10);
+  digitalWrite(frontTriggerPin, LOW);
+  frontDuration = pulseIn(frontEchoPin, HIGH);  //medimos el tiempo entre pulsos, en microsegundos
+  frontDistanceCm = frontDuration * 10 / 292 / 2;  //convertimos a distancia, en cm
+  Serial.print("Distance: ");
+  Serial.print(frontDistanceCm);
+  Serial.println(" cm");
+}
+
+void checkLeftDistance() {
+  digitalWrite(leftTriggerPin, LOW);  //para generar un pulso limpio ponemos a LOW 4us
+  delayMicroseconds(4);
+  digitalWrite(leftTriggerPin, HIGH);  //generamos Trigger (disparo) de 10us
+  delayMicroseconds(10);
+  digitalWrite(leftTriggerPin, LOW);
+  leftDuration = pulseIn(leftEchoPin, HIGH);  //medimos el tiempo entre pulsos, en microsegundos
+  leftDistanceCm = leftDuration * 10 / 292 / 2;  //convertimos a distancia, en cm
+  Serial.print("Left distance: ");
+  Serial.print(leftDistanceCm);
+  Serial.println(" cm");
+}
+
+void checkRightDistance() {
+  digitalWrite(rightTriggerPin, LOW);  //para generar un pulso limpio ponemos a LOW 4us
+  delayMicroseconds(4);
+  digitalWrite(rightTriggerPin, HIGH);  //generamos Trigger (disparo) de 10us
+  delayMicroseconds(10);
+  digitalWrite(rightTriggerPin, LOW);
+  rightDuration = pulseIn(rightEchoPin, HIGH);  //medimos el tiempo entre pulsos, en microsegundos
+  rightDistanceCm = rightDuration * 10 / 292 / 2;  //convertimos a distancia, en cm
+  Serial.print("Right distance: ");
+  Serial.print(rightDistanceCm);
+  Serial.println(" cm");
+}
+
+void moveBackward() {
+  Serial.println("Backward.");
+  digitalWrite(motorL1, LOW);
+  digitalWrite(motorL2, HIGH);
+  digitalWrite(motorR1, LOW);
+  digitalWrite(motorR2, HIGH);
+  analogWrite(motorER, 80);
+  analogWrite(motorEL, 20);
+  delay(1200);
+}
+
+void moveForward() {
+  Serial.println("Forward.");
+  digitalWrite(motorL1, LOW);
+  digitalWrite(motorL2, HIGH);
+  digitalWrite(motorR1, LOW);
+  digitalWrite(motorR2, HIGH);
+  analogWrite(motorER, 80);
+  analogWrite(motorEL, 80);
+
+  
+  }
+
+void moveLeft() {
+  Serial.println("Left.");
+  digitalWrite(motorL1, LOW);
+  digitalWrite(motorL2, HIGH);
+  digitalWrite(motorR1, LOW);
+  digitalWrite(motorR2, HIGH);
+  analogWrite(motorER, 80);
+  analogWrite(motorEL, 40);
+  delay(600);
+  
+}
+
+void moveRight() {
+  Serial.println("Right.");
+  digitalWrite(motorL1, LOW);
+  digitalWrite(motorL2, HIGH);
+  digitalWrite(motorR1, LOW);
+  digitalWrite(motorR2, HIGH);
+  analogWrite(motorER, 40);
+  analogWrite(motorEL, 80);
+  delay(600);
+  
+}
